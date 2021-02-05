@@ -8,41 +8,54 @@ public class Test {
     public static int wordCounter = 0;
 
     public static void main(String[] args) throws IOException {
+
         //Ввод URL-ссылки на файл и загрузка файла
-        String url = "http://madbrains.github.io/java_course_test";
+        BufferedReader bufReader = new BufferedReader(new InputStreamReader(System.in));
+        System.out.println("Введите URL файла для подсчета количества слов:");
+
         File tmpFile = File.createTempFile("file",null);
-        downloadUsingStream(url,tmpFile);
+        while (tmpFile.length() == 0) {
+            try {
+                //String url = "http://madbrains.github.io/java_course_test";
+                String url = bufReader.readLine();
+                downloadUsingStream(url, tmpFile);
+            } catch (Exception e) {
+                System.out.println("Некорректный URL! Пожалуйста введите корректный адрес файла:");
+            }
+        }
+        bufReader.close();
 
-        //Считывание файла в буфер
+        //Считывание файла в буфер и подсчет количества слов
         BufferedReader reader = new BufferedReader(new FileReader(tmpFile));
-
-        String str = reader.readLine();
-        while (str != null) {
-            String[] wordsInLine = str.replace(" — "," ").replace("- "," ").replace(" -"," ").split(" ");
-            wordCounter += wordsInLine.length;
+        while (reader.ready()) {
+            String str = reader.readLine();
+            str = str.replaceAll("\\.|\\,|\\)|\\(|\\?|\\!|\\:|\\;"," ").
+                    replace(" -"," ").replace("- "," ").
+                    replace(" — "," ").replaceAll("\\s+"," ");
+            String[] wordsInLine = str.split(" ");
             for (int i = 0; i < wordsInLine.length; i++) {
-                if (wordsInLine[i].length()>0) {
-                    StringBuilder sb = new StringBuilder();
-                    sb.append(wordsInLine[i].replaceAll("\\.|\\,|\\)|\\(",""));
-                    if (countUpperLiter(sb.toString()) <= 1) {
+                if (wordsInLine[i].length() > 0) {
+                    String s = wordsInLine[i];
+                    StringBuilder sb;
+                    if (countUpperLiter(wordsInLine[i]) == 0) {
+                        sb = new StringBuilder();
+                        sb.append(wordsInLine[i]);
                         sb.setCharAt(0,Character.toUpperCase(sb.charAt(0)));
+                        s = sb.toString();
                     }
-                    String s = sb.toString();
                     if (!wordMap.keySet().contains(s))
                         wordMap.put(s,1);
                     else
                         {wordMap.put(s, wordMap.get(s)+1);}
+                    wordCounter++;
                 }
             }
-            str = reader.readLine();
         }
         reader.close();
 
-        //Вывод информации на экран
-        for (Map.Entry<String,Integer> pair : wordMap.entrySet()) {
-            System.out.println(pair.getKey()+" - "+pair.getValue());
-        }
-        System.out.println("\nКоличество слов в тексте: "+wordCounter);
+        //Вывод результата на экран
+        printWords(wordMap);
+        System.out.println("\nОбщее количество слов в тексте: " + wordCounter);
 
     }
 
@@ -53,7 +66,7 @@ public class Test {
              FileOutputStream fis = new FileOutputStream(file))
         {
             byte[] buffer = new byte[1024];
-            int count=0;
+            int count = 0;
             while((count = bis.read(buffer,0,1024)) != -1)
                 {
                     fis.write(buffer, 0, count);
@@ -68,6 +81,15 @@ public class Test {
             if (Character.toString(string.charAt(i)).matches("[A-Z]|[А-Я]")) counter++;
         }
         return counter;
+    }
+
+    //Вывод на экран карты с сортировкой по убыванию value
+    public static void printWords(Map<String, Integer> map) {
+        List<Map.Entry<String, Integer>> list = new LinkedList<>(map.entrySet());
+        list.sort(Map.Entry.<String, Integer>comparingByValue().reversed());
+        for (Map.Entry<String, Integer> pair : list) {
+            System.out.println(pair.getKey() + " - " + pair.getValue());
+        }
     }
 
 }
